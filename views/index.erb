@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es" data-theme="<%= load_progress.fetch('theme', 'dark') %>">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="2048 en Ruby con una interfaz simple y funcional para móvil y escritorio.">
+    <title>2048</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <main class="game-shell">
+      <section class="panel">
+        <div class="topbar">
+          <div>
+            <h1>2048</h1>
+          </div>
+          <div class="actions">
+            <button id="new-game" class="btn btn-primary">Nueva partida</button>
+            <button id="theme-toggle" class="btn">Tema</button>
+            <button id="sound-toggle" class="btn">Sonido</button>
+          </div>
+        </div>
+
+        <div class="scores">
+          <div class="score-card">
+            <span>Puntuación</span>
+            <strong id="score">0</strong>
+          </div>
+          <div class="score-card">
+            <span>Mejor</span>
+            <strong id="best-score">0</strong>
+          </div>
+        </div>
+
+        <div id="status" class="status" aria-live="polite">Mueve las fichas con las flechas o deslizando.</div>
+        <div id="board" class="board" tabindex="0"></div>
+      </section>
+    </main>
+
+    <script src="/js/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Nova 2048 icon">
+  <rect width="64" height="64" rx="16" fill="#101826"/>
+  <rect x="10" y="10" width="44" height="44" rx="12" fill="#f7f9fc"/>
+  <path d="M22 24h20" stroke="#4b6ef5" stroke-width="3" stroke-linecap="round"/>
+  <path d="M22 32h20" stroke="#6d5dfc" stroke-width="3" stroke-linecap="round"/>
+  <path d="M22 40h20" stroke="#4b6ef5" stroke-width="3" stroke-linecap="round"/>
+</svg>
