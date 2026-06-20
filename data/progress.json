@@ -7,27 +7,27 @@
       0
     ],
     [
-      4,
+      0,
       0,
       0,
       0
     ],
     [
-      2,
-      16,
-      4,
+      0,
+      0,
+      0,
       0
     ],
     [
-      4,
-      8,
-      4,
+      0,
+      0,
+      0,
       0
     ]
   ],
-  "score": 68,
+  "score": 0,
   "won": false,
   "lost": false,
-  "best_score": 68,
+  "best_score": 0,
   "theme": "dark"
 }
