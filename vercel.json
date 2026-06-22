@@ -3,14 +3,14 @@
   "installCommand": "bundle install",
   "builds": [
     {
-      "src": "app.rb",
+      "src": "config.ru",
       "use": "@vercel/ruby"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "app.rb"
+      "dest": "config.ru"
     }
   ]
 }
