@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "bundle install",
   "builds": [
     {
       "src": "app.rb",
