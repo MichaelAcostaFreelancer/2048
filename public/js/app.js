@@ -11,9 +11,165 @@ let soundEnabled = true;
 let gestureStart = null;
 let audioContext = null;
 
-async function loadState() {
-  const response = await fetch('/api/state');
-  state = await response.json();
+class Game2048 {
+  constructor(state = null) {
+    if (state && state.board && Array.isArray(state.board) && state.board.length === 4) {
+      this.board = state.board.map((row) => row.map((value) => Number(value) || 0));
+      this.score = Number(state.score) || 0;
+      this.won = Boolean(state.won);
+      this.lost = Boolean(state.lost);
+      this.best_score = Number(state.best_score) || 0;
+      this.theme = state.theme || 'dark';
+      if (!this.board.some((row) => row.some((value) => value !== 0))) {
+        this.spawnTile();
+        this.spawnTile();
+      }
+    } else {
+      this.board = Array.from({ length: 4 }, () => Array(4).fill(0));
+      this.score = 0;
+      this.won = false;
+      this.lost = false;
+      this.best_score = 0;
+      this.theme = state && state.theme ? state.theme : 'dark';
+      this.spawnTile();
+      this.spawnTile();
+    }
+  }
+
+  move(direction) {
+    if (this.lost) return this.toObject();
+
+    const originalBoard = this.deepCopy(this.board);
+    let movedBoard;
+
+    switch (direction.toString().toLowerCase()) {
+      case 'left':
+        movedBoard = this.board.map((row) => this.mergeRow(row));
+        break;
+      case 'right':
+        movedBoard = this.board.map((row) => this.mergeRow([...row].reverse()).reverse());
+        break;
+      case 'up':
+        movedBoard = this.transpose(this.transpose(this.board).map((col) => this.mergeRow(col)));
+        break;
+      case 'down':
+        movedBoard = this.transpose(this.transpose(this.board).map((col) => this.mergeRow([...col].reverse()).reverse()));
+        break;
+      default:
+        movedBoard = this.board;
+    }
+
+    if (!this.areBoardsEqual(originalBoard, movedBoard)) {
+      this.board = movedBoard;
+      this.spawnTile();
+      this.won = this.board.flat().some((value) => value >= 2048) || this.won;
+      this.lost = this.gameOver();
+    }
+
+    return this.toObject();
+  }
+
+  toObject() {
+    return {
+      board: this.deepCopy(this.board),
+      score: this.score,
+      won: this.won,
+      lost: this.lost,
+      best_score: Math.max(this.best_score, this.score),
+      theme: this.theme
+    };
+  }
+
+  mergeRow(values) {
+    const compacted = values.filter((value) => value !== 0);
+    const merged = [];
+    let index = 0;
+
+    while (index < compacted.length) {
+      if (index + 1 < compacted.length && compacted[index] === compacted[index + 1]) {
+        const mergedValue = compacted[index] * 2;
+        merged.push(mergedValue);
+        this.score += mergedValue;
+        this.best_score = Math.max(this.best_score, this.score);
+        index += 2;
+      } else {
+        merged.push(compacted[index]);
+        index += 1;
+      }
+    }
+
+    return [...merged, ...Array(4 - merged.length).fill(0)];
+  }
+
+  spawnTile() {
+    const emptyCells = [];
+
+    this.board.forEach((row, rowIndex) => {
+      row.forEach((value, colIndex) => {
+        if (value === 0) emptyCells.push([rowIndex, colIndex]);
+      });
+    });
+
+    if (!emptyCells.length) return;
+
+    const [row, col] = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+    this.board[row][col] = Math.random() < 0.9 ? 2 : 4;
+  }
+
+  gameOver() {
+    if (this.board.some((row) => row.some((value) => value === 0))) {
+      return false;
+    }
+
+    for (let row = 0; row < 4; row += 1) {
+      for (let col = 0; col < 4; col += 1) {
+        const value = this.board[row][col];
+        if (row + 1 < 4 && value === this.board[row + 1][col]) return false;
+        if (col + 1 < 4 && value === this.board[row][col + 1]) return false;
+      }
+    }
+
+    return true;
+  }
+
+  transpose(board) {
+    return board[0].map((_, colIndex) => board.map((row) => row[colIndex]));
+  }
+
+  areBoardsEqual(a, b) {
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+
+  deepCopy(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+}
+
+function getSavedState() {
+  const saved = localStorage.getItem('nova2048State');
+  if (!saved) return null;
+
+  try {
+    return JSON.parse(saved);
+  } catch {
+    return null;
+  }
+}
+
+function saveState() {
+  if (state) {
+    localStorage.setItem('nova2048State', JSON.stringify(state));
+  }
+}
+
+function loadState() {
+  const saved = getSavedState();
+  if (saved && saved.board && Array.isArray(saved.board) && saved.board.length === 4) {
+    state = saved;
+  } else {
+    state = new Game2048().toObject();
+    saveState();
+  }
   render();
 }
 
@@ -61,7 +217,6 @@ function playMoveSound() {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     audioContext = AudioContextClass ? new AudioContextClass() : null;
   }
-
   if (!audioContext) return;
 
   const oscillator = audioContext.createOscillator();
@@ -73,7 +228,7 @@ function playMoveSound() {
   oscillator.frequency.exponentialRampToValueAtTime(900, now + 0.06);
   gainNode.gain.setValueAtTime(0.0001, now);
   gainNode.gain.exponentialRampToValueAtTime(0.025, now + 0.01);
-  gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+  gainNode.gain.setValueAtTime(0.0001, now + 0.08);
 
   oscillator.connect(gainNode);
   gainNode.connect(audioContext.destination);
@@ -81,33 +236,26 @@ function playMoveSound() {
   oscillator.stop(now + 0.08);
 }
 
-async function move(direction) {
-  const response = await fetch('/move', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `direction=${direction}`
-  });
-  state = await response.json();
+function move(direction) {
+  const game = new Game2048(state);
+  state = game.move(direction);
+  saveState();
   animateBoard();
   render();
   playMoveSound();
 }
 
-async function resetGame() {
-  const response = await fetch('/reset', { method: 'POST' });
-  state = await response.json();
+function resetGame() {
+  const theme = state?.theme || 'dark';
+  state = new Game2048({ theme }).toObject();
+  saveState();
   animateBoard();
   render();
 }
 
-async function toggleTheme() {
-  const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
-  const response = await fetch('/theme', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `theme=${nextTheme}`
-  });
-  state = await response.json();
+function toggleTheme() {
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  saveState();
   render();
 }
 
